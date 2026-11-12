@@ -9,6 +9,8 @@ export async function shot(page: Page, name: string): Promise<void> {
   mkdirSync(dir, { recursive: true })
   // Let toasts and transitions settle so the picture is the steady state.
   await page.waitForTimeout(400)
+  // A toast from the last action would sit over the header.
+  await page.evaluate(() => document.querySelectorAll('.n-message-container').forEach((e) => e.remove()))
   await page.screenshot({ path: join(dir, `${name}.png`) })
 }
 

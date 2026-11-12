@@ -108,3 +108,15 @@ const view = computed(() => {
   width: 100%;
 }
 </style>
+
+<style>
+/* Table cells hold identifiers (MAC addresses, models, versions): never break
+   them mid-value; a narrow window scrolls the table sideways instead. */
+.n-data-table .n-data-table-th,
+.n-data-table .n-data-table-td {
+  white-space: nowrap;
+}
+.n-data-table .n-data-table-wrapper {
+  overflow-x: auto;
+}
+</style>
