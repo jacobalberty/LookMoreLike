@@ -103,6 +103,30 @@ keeps the package current; it needs a `NPM_GITHUB_TOKEN` Dependabot secret.
   Not covered: a real OpenID Connect provider (the buttons and URLs are unit
   tested only) and anything on hardware.
 
+## Releases
+
+Images are published to `ghcr.io/jacobalberty/lookmorelike` (linux/amd64 and
+linux/arm64), scanned with Trivy and signed with cosign:
+
+| Tag | When |
+|---|---|
+| `latest`, `main` | every push to `main` that passes CI |
+| `X.Y.Z`, `X.Y`, `X` | a release |
+
+Cut a release by pushing a tag, or from the Actions tab (**Release**, "Run
+workflow"):
+
+```sh
+git tag v1.2.3 && git push origin v1.2.3        # releases that tag
+```
+
+Run from the Actions tab with the version left empty, the workflow computes
+the next one from the conventional commits since the last release (`feat!:` or
+`BREAKING CHANGE` is a major bump, `feat:` a minor one, anything else a patch),
+creates the tag, publishes a GitHub release with notes from those commits, and
+builds the image. The publish fails on fixable HIGH or CRITICAL findings in the
+image, so a release can be held up by a base-image update.
+
 ## License
 
 GPL-3.0, like beenfar. See [LICENSE](LICENSE).

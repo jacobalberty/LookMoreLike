@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # --- build the UI ---
-FROM node:24-alpine AS build
+# The build stage runs on the builder's own platform: the built files do not
+# depend on the target architecture, so a multi-arch image builds the UI once.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 # @jacobalberty/beenfar-api comes from GitHub Packages, which wants a token
