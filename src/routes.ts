@@ -30,6 +30,13 @@ export const routes: RouteDef[] = [
     component: view(() => import('./views/NetworksView.vue')),
   },
   {
+    path: '/wifi',
+    title: 'Wifi networks',
+    group: 'Network',
+    nav: true,
+    component: view(() => import('./views/WifiNetworksView.vue')),
+  },
+  {
     path: '/radius',
     title: 'RADIUS servers',
     group: 'Network',
