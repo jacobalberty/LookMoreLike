@@ -73,6 +73,18 @@ describe('AppShell', () => {
     expect(w.get('[data-test=page]').text()).toBe('networks page')
   })
 
+  it('refuses an admin-only address typed by a non-admin, without loading the screen', async () => {
+    const { w } = await setup({ admin: false, path: '/users' })
+    expect(w.find('[data-test=forbidden]').exists()).toBe(true)
+    expect(w.text()).not.toContain('users page')
+  })
+
+  it('shows an admin-only screen to an admin', async () => {
+    const { w } = await setup({ admin: true, path: '/users' })
+    expect(w.find('[data-test=forbidden]').exists()).toBe(false)
+    expect(w.get('[data-test=page]').text()).toBe('users page')
+  })
+
   it('says so for an unknown address', async () => {
     const { w } = await setup({ admin: false, path: '/nope' })
     expect(w.text()).toContain('Page not found')

@@ -8,6 +8,7 @@ import { useRouter, useSession } from '@/context'
 import { methodLabel } from '@/session'
 import { homePath, routes as appRoutes } from '@/routes'
 import { findRoute, visibleRoutes, type RouteDef } from '@/router'
+import AdminOnly from '@/views/AdminOnly.vue'
 import NotFound from '@/views/NotFound.vue'
 
 const props = withDefaults(defineProps<{ routes?: readonly RouteDef[] }>(), { routes: () => appRoutes })
@@ -48,7 +49,17 @@ const canChangePassword = computed(() => {
 })
 const changingPassword = ref(false)
 
-const view = computed(() => current.value?.component ?? NotFound)
+/**
+ * Admin-only screens are refused up front for other users, so they never
+ * load (and fail) just because someone typed the address. The controller
+ * enforces this too; this is only so the page says so.
+ */
+const view = computed(() => {
+  const r = current.value
+  if (!r) return NotFound
+  if (r.admin && !session.isAdmin.value) return AdminOnly
+  return r.component
+})
 </script>
 
 <template>
