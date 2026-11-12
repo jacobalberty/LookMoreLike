@@ -25,17 +25,39 @@ async function forget(d: Device) {
   const ok = await confirm({
     title: 'Forget this device?',
     content:
-      `beenfar stops managing ${d.mac} and drops its settings, including any switch port settings. ` +
-      'If the device is still on the network it shows up again as pending.',
+      `beenfar stops managing ${d.mac}, drops its settings (including switch port settings) and tells the ` +
+      'device to reset itself to factory defaults, so it returns as pending. The reset is delivered when the ' +
+      'device next checks in: if it is offline it stays listed as forgetting until it does.',
     action: 'Forget',
   })
   if (!ok) return
   failure.value = ''
   try {
-    await clients.devices.forgetDevice({ id: d.id })
-    message.success(`Forgot ${d.mac}`)
+    const res = await clients.devices.forgetDevice({ id: d.id })
+    if (res.device?.forgetting) message.info(`${d.mac} will reset when it next checks in`)
+    else message.success(`Forgot ${d.mac}`)
   } catch (e) {
     failure.value = `Could not forget ${d.mac}: ${describeError(e)}`
+  } finally {
+    await reload()
+  }
+}
+
+async function removeNow(d: Device) {
+  const ok = await confirm({
+    title: 'Remove without resetting?',
+    content:
+      `beenfar forgets ${d.mac} immediately and does not wait for the reset. The device keeps its old settings ` +
+      'and key, so it shows up as locked until you reset it by hand.',
+    action: 'Remove now',
+  })
+  if (!ok) return
+  failure.value = ''
+  try {
+    await clients.devices.forgetDevice({ id: d.id, force: true })
+    message.success(`Removed ${d.mac}`)
+  } catch (e) {
+    failure.value = `Could not remove ${d.mac}: ${describeError(e)}`
   } finally {
     await reload()
   }
@@ -55,7 +77,9 @@ const columns = computed<DataTableColumns<Device>>(() => [
     render: (d) =>
       h(NSpace, { size: 4 }, () => [
         h(NButton, { size: 'small', 'data-test': 'ports', onClick: () => router.navigate(`/switch-ports?device=${encodeURIComponent(d.id)}`) }, () => 'Switch ports'),
-        h(NButton, { size: 'small', type: 'error', secondary: true, 'data-test': 'forget', onClick: () => forget(d) }, () => 'Forget'),
+        d.forgetting
+          ? h(NButton, { size: 'small', type: 'error', secondary: true, 'data-test': 'remove-now', onClick: () => removeNow(d) }, () => 'Remove now')
+          : h(NButton, { size: 'small', type: 'error', secondary: true, 'data-test': 'forget', onClick: () => forget(d) }, () => 'Forget'),
       ]),
   },
 ])

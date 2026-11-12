@@ -18,6 +18,15 @@ defineProps<{ device: Device }>()
       key (Adapters, admins only) or reset the device; it stops being locked the next time it is seen.
     </n-tooltip>
 
+    <n-tooltip v-if="device.forgetting">
+      <template #trigger>
+        <n-tag size="small" type="warning" data-test="forgetting">Forgetting: waiting for reset</n-tag>
+      </template>
+      beenfar told this device to reset itself to factory defaults. The reset is delivered the next time the
+      device checks in, and the device then returns as pending. Use Remove now to give up waiting; the device
+      then keeps its old settings and has to be reset by hand.
+    </n-tooltip>
+
     <n-tooltip v-if="device.readoption === ReadoptionState.AWAITING_ACCEPTANCE">
       <template #trigger>
         <n-tag size="small" type="warning" data-test="awaiting">Reset: awaiting re-adoption</n-tag>

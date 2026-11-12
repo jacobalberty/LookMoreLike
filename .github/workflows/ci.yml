@@ -19,7 +19,7 @@ concurrency:
 env:
   # The beenfar commit the end-to-end tests build beenfard from. Bump it
   # when the UI starts to need something newer.
-  BEENFAR_REF: f69cc3f4d5c9043efbbf43525b23bbd69f67f84c
+  BEENFAR_REF: 2e92490847f9461043c607a90c78217f39b0e108
 
 jobs:
   ui:
