@@ -124,8 +124,10 @@ Run from the Actions tab with the version left empty, the workflow computes
 the next one from the conventional commits since the last release (`feat!:` or
 `BREAKING CHANGE` is a major bump, `feat:` a minor one, anything else a patch),
 creates the tag, publishes a GitHub release with notes from those commits, and
-builds the image. The publish fails on fixable HIGH or CRITICAL findings in the
-image, so a release can be held up by a base-image update.
+builds the image. The image scan is report only: fixable HIGH and CRITICAL findings (typically
+the base image's packages, until its publisher rebuilds it) are listed in the
+run summary and kept as the `trivy-report` artifact, and never hold up a
+release or its signing.
 
 ## License
 

@@ -106,16 +106,50 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Scan the pushed image; fails the run on fixable HIGH/CRITICAL findings.
-      # A finding in the base image is fixed by bumping it (Dependabot proposes
-      # the new nginx-unprivileged tag), not by patching packages in the build.
-      - name: Scan image with Trivy
+      # Scan the pushed image. Report only: a finding in the base image that its
+      # publisher has not rebuilt yet must not stop a release or its signing, so
+      # this never fails the run. The results are in the run summary and in the
+      # "trivy-report" artifact (JSON and a table).
+      - name: Scan image with Trivy (JSON report)
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
+          format: json
+          output: trivy-report.json
+
+      - name: Scan image with Trivy (table report)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '0'
+          format: table
+          output: trivy-report.txt
+
+      - name: Add the scan results to the run summary
+        if: ${{ !cancelled() }}
+        run: |
+          {
+            echo '### Trivy scan (fixable HIGH and CRITICAL findings; report only)'
+            echo
+            echo '```'
+            cat trivy-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the scan results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: trivy-report
+          path: |
+            trivy-report.json
+            trivy-report.txt
+          if-no-files-found: error
 
       # Sign the resulting Docker image digest.
       # This will only write to the public Rekor transparency log when the Docker
