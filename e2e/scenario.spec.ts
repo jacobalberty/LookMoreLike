@@ -190,12 +190,12 @@ test.describe.serial('the UI against beenfard', () => {
     await rowWith(page, 'office').locator('[data-test=rotate]').click()
     await expect(page.locator('[data-test=f-secret] input')).toHaveValue('') // never pre-filled
     await fill(page, 'f-secret', SECRETS[1]!)
-    await shot(page, '10-radius-rotate')
+    await shot(page, '09-radius-rotate')
     updates.length = 0
     await page.locator('[data-test=save]').click()
     await expect(rowWith(page, 'office')).toContainText('version 2')
     expect(updates[0]!.body.updateMask).toBe('sharedSecret')
-    await shot(page, '09-radius-servers')
+    await shot(page, '10-radius-servers')
 
     const server = (await stack.api('beenfar.config.v1.RadiusServerService/ListRadiusServers')).radiusServers[0]
     expect(server.sharedSecret ?? '').toBe('')
