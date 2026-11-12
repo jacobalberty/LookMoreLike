@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { NButton, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NMenu, NSpace, NTag, type MenuOption } from 'naive-ui'
+import { NButton, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NMenu, NSpace, NTag, useMessage, type MenuOption } from 'naive-ui'
 import { UserSource } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
 import { computed, h, ref, watchEffect } from 'vue'
 import PasswordDialog from './PasswordDialog.vue'
 import AppLink from './AppLink.vue'
+import { describeError } from '@/api/errors'
 import { useRouter, useSession } from '@/context'
 import { methodLabel } from '@/session'
 import { homePath, routes as appRoutes } from '@/routes'
@@ -49,6 +50,22 @@ const canChangePassword = computed(() => {
 })
 const changingPassword = ref(false)
 
+const message = useMessage()
+const signingOut = ref(false)
+
+/** A failed sign-out leaves the session alive, so say so and let the user try again. */
+async function signOut() {
+  if (signingOut.value) return
+  signingOut.value = true
+  try {
+    await session.logout()
+  } catch (e) {
+    message.error(`Could not sign out: ${describeError(e)}`)
+  } finally {
+    signingOut.value = false
+  }
+}
+
 /**
  * Admin-only screens are refused up front for other users, so they never
  * load (and fail) just because someone typed the address. The controller
@@ -75,7 +92,7 @@ const view = computed(() => {
           <n-tag v-if="session.isAdmin.value" size="small" type="info">admin</n-tag>
           <n-tag size="small" data-test="auth-method">signed in via {{ methodLabel(session.state.method) }}</n-tag>
           <n-button v-if="canChangePassword" size="small" data-test="my-password" @click="changingPassword = true">Password</n-button>
-          <n-button size="small" data-test="logout" @click="session.logout()">Sign out</n-button>
+          <n-button size="small" data-test="logout" :loading="signingOut" @click="signOut()">Sign out</n-button>
         </n-space>
       </n-layout-header>
       <n-layout-content content-style="padding: 24px" :native-scrollbar="false" class="content">

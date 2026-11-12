@@ -122,10 +122,39 @@ describe('logout', () => {
     expect(assign).toHaveBeenCalledWith('https://auth.example/sign_out')
   })
 
-  it('still leaves when the logout call fails', async () => {
+  it('stays signed in, and says why, when signing out fails', async () => {
     const assign = vi.fn()
-    const s = make(fakeAuth({ logout: vi.fn().mockRejectedValue(new Error('gone')) }), assign)
+    const down = new ConnectError('unavailable', Code.Unavailable)
+    const s = make(fakeAuth({ logout: vi.fn().mockRejectedValue(down) }), assign)
     await s.load()
+    await expect(s.logout()).rejects.toBe(down)
+    // The session and its cookie may still be valid: do not pretend they ended.
+    expect(s.state.status).toBe('authenticated')
+    expect(s.state.user?.username).toBe('alice')
+    expect(assign).not.toHaveBeenCalled()
+  })
+
+  it('does not follow a sign-out URL when signing out failed', async () => {
+    const assign = vi.fn()
+    const cfg = create(GetAuthConfigResponseSchema, { proxy: create(ProxyAuthSchema, { logoutUrl: 'https://auth.example/sign_out' }) })
+    const s = make(fakeAuth({ getAuthConfig: vi.fn().mockResolvedValue(cfg), logout: vi.fn().mockRejectedValue(new Error('boom')) }), assign)
+    await s.load()
+    await expect(s.logout()).rejects.toThrow('boom')
+    expect(assign).not.toHaveBeenCalled()
+  })
+
+  it('treats "there is no session" as already signed out', async () => {
+    const s = make(fakeAuth({ logout: vi.fn().mockRejectedValue(new ConnectError('no session', Code.Unauthenticated)) }))
+    await s.load()
+    await s.logout()
+    expect(s.state.status).toBe('anonymous')
+  })
+
+  it('can sign out again after a failure', async () => {
+    const logout = vi.fn().mockRejectedValueOnce(new ConnectError('x', Code.Unavailable)).mockResolvedValueOnce({ redirectUrl: '' })
+    const s = make(fakeAuth({ logout }))
+    await s.load()
+    await expect(s.logout()).rejects.toBeDefined()
     await s.logout()
     expect(s.state.status).toBe('anonymous')
   })

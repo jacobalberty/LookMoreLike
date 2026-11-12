@@ -1,4 +1,5 @@
 import { create } from '@bufbuild/protobuf'
+import { Code, ConnectError } from '@connectrpc/connect'
 import { AuthMethod, GetAuthConfigResponseSchema } from '@jacobalberty/beenfar-api/beenfar/admin/v1/auth_pb'
 import { UserSchema, UserSource } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -96,6 +97,18 @@ describe('AppShell', () => {
     const sso = vi.fn().mockResolvedValue({ user: create(UserSchema, { id: 'u', username: 'bob', source: UserSource.OIDC }), method: AuthMethod.OIDC })
     const { w: w2 } = await setup({ admin: false, getCurrentUser: sso })
     expect(w2.find('[data-test=my-password]').exists()).toBe(false)
+  })
+
+  it('stays signed in and shows the error when signing out fails, then lets the user retry', async () => {
+    const { w, auth, session } = await setup({ admin: false })
+    auth.logout.mockRejectedValueOnce(new ConnectError('down', Code.Unavailable)).mockResolvedValueOnce({ redirectUrl: '' })
+    await w.get('[data-test=logout]').trigger('click')
+    await flushPromises()
+    expect(session.state.status).toBe('authenticated')
+    expect(document.body.textContent).toContain('Could not sign out')
+    await w.get('[data-test=logout]').trigger('click')
+    await flushPromises()
+    expect(session.state.status).toBe('anonymous')
   })
 
   it('signs out', async () => {

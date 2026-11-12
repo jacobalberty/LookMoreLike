@@ -90,14 +90,19 @@ export function createSession(
   /**
    * Ends the session. When the controller (or, in proxy mode, the
    * configuration) names a sign-out URL, the browser goes there too.
+   *
+   * Only "there is no session any more" counts as signed out. Any other
+   * failure (the network, a server error) means the session and its cookie may
+   * still be valid, so the user stays signed in and the error is thrown for
+   * the screen to show, with the button still there to retry.
    */
   async function logout(): Promise<void> {
     let target = state.config?.proxy?.logoutUrl ?? ''
     try {
       const res = await clients.auth.logout({})
       target = res.redirectUrl || target
-    } catch {
-      // The session may already be gone; still leave.
+    } catch (e) {
+      if (ConnectError.from(e).code !== Code.Unauthenticated) throw e
     }
     state.user = undefined
     state.method = undefined
