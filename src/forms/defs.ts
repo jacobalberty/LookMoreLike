@@ -1,3 +1,4 @@
+import type { User } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
 import type { Network } from '@jacobalberty/beenfar-api/beenfar/config/v1/network_pb'
 import type { RadiusServer } from '@jacobalberty/beenfar-api/beenfar/config/v1/radius_server_pb'
 import { PoeMode, SwitchPortTagging, type SwitchPort } from '@jacobalberty/beenfar-api/beenfar/config/v1/switch_port_pb'
@@ -75,4 +76,10 @@ export const switchPortFields: readonly FieldDef<SwitchPort>[] = [
   { path: 'tagging', key: 'tagging', label: 'Tagged networks', format: (v) => taggingLabels[v as number] ?? String(v) },
   { path: 'tagged_network_ids', key: 'taggedNetworkIds', kind: 'set', label: 'Selected tagged networks', format: (v) => ((v as string[]).length ? (v as string[]).join(', ') : 'none') },
   { path: 'poe_mode', key: 'poeMode', label: 'PoE', format: (v) => poeLabels[v as number] ?? String(v) },
+]
+
+/** The fields of a user an admin can edit. UpdateUser has no mask: it sends the whole user. */
+export const userFields: readonly FieldDef<User>[] = [
+  { path: 'username', key: 'username', label: 'Username' },
+  { path: 'admin', key: 'admin', label: 'Administrator' },
 ]

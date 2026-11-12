@@ -57,6 +57,14 @@ export const routes: RouteDef[] = [
     nav: true,
     component: view(() => import('./views/ApiTokensView.vue')),
   },
+  {
+    path: '/users',
+    title: 'Users',
+    group: 'Access',
+    nav: true,
+    admin: true,
+    component: view(() => import('./views/UsersView.vue')),
+  },
 ]
 
 /** Where "/" goes. */

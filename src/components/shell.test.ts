@@ -1,7 +1,8 @@
 import { create } from '@bufbuild/protobuf'
 import { AuthMethod, GetAuthConfigResponseSchema } from '@jacobalberty/beenfar-api/beenfar/admin/v1/auth_pb'
-import { UserSchema } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
+import { UserSchema, UserSource } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
 import { flushPromises, mount } from '@vue/test-utils'
+import { NDialogProvider, NMessageProvider } from 'naive-ui'
 import { defineComponent, h } from 'vue'
 import { describe, expect, it, vi } from 'vitest'
 import App from '@/App.vue'
@@ -38,7 +39,10 @@ async function setup(opts: { admin: boolean; path?: string; getCurrentUser?: Ret
   const session = createSession(clients, { navigator: { assign: vi.fn() } })
   const router = createRouter(fakeWindow(opts.path ?? '/devices'))
   await session.load()
-  const w = mount(AppShell, { props: { routes }, global: { provide: { [clientsKey as symbol]: clients, [sessionKey as symbol]: session, [routerKey as symbol]: router } } })
+  const Root = defineComponent({
+    render: () => h(NMessageProvider, null, () => h(NDialogProvider, null, () => h(AppShell, { routes }))),
+  })
+  const w = mount(Root, { global: { provide: { [clientsKey as symbol]: clients, [sessionKey as symbol]: session, [routerKey as symbol]: router } } })
   await flushPromises()
   return { w, session, router, auth }
 }
@@ -72,6 +76,14 @@ describe('AppShell', () => {
   it('says so for an unknown address', async () => {
     const { w } = await setup({ admin: false, path: '/nope' })
     expect(w.text()).toContain('Page not found')
+  })
+
+  it('offers a password change to local users, not to single sign-on users', async () => {
+    const { w } = await setup({ admin: false })
+    expect(w.find('[data-test=my-password]').exists()).toBe(true)
+    const sso = vi.fn().mockResolvedValue({ user: create(UserSchema, { id: 'u', username: 'bob', source: UserSource.OIDC }), method: AuthMethod.OIDC })
+    const { w: w2 } = await setup({ admin: false, getCurrentUser: sso })
+    expect(w2.find('[data-test=my-password]').exists()).toBe(false)
   })
 
   it('signs out', async () => {

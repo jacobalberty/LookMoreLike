@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { NButton, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NMenu, NSpace, NTag, type MenuOption } from 'naive-ui'
-import { computed, h, watchEffect } from 'vue'
+import { UserSource } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
+import { computed, h, ref, watchEffect } from 'vue'
+import PasswordDialog from './PasswordDialog.vue'
 import AppLink from './AppLink.vue'
 import { useRouter, useSession } from '@/context'
 import { methodLabel } from '@/session'
@@ -39,6 +41,13 @@ watchEffect(() => {
   if (router.path === '/') router.navigate(homePath, { replace: true })
 })
 
+/** Users who sign in with a password here can change it; others have none. */
+const canChangePassword = computed(() => {
+  const s = session.state.user?.source
+  return s === UserSource.LOCAL || s === UserSource.UNSPECIFIED
+})
+const changingPassword = ref(false)
+
 const view = computed(() => current.value?.component ?? NotFound)
 </script>
 
@@ -54,6 +63,7 @@ const view = computed(() => current.value?.component ?? NotFound)
           <span data-test="current-user">{{ session.state.user?.username }}</span>
           <n-tag v-if="session.isAdmin.value" size="small" type="info">admin</n-tag>
           <n-tag size="small" data-test="auth-method">signed in via {{ methodLabel(session.state.method) }}</n-tag>
+          <n-button v-if="canChangePassword" size="small" data-test="my-password" @click="changingPassword = true">Password</n-button>
           <n-button size="small" data-test="logout" @click="session.logout()">Sign out</n-button>
         </n-space>
       </n-layout-header>
@@ -61,6 +71,13 @@ const view = computed(() => current.value?.component ?? NotFound)
         <component :is="view" />
       </n-layout-content>
     </n-layout>
+    <password-dialog
+      v-if="session.state.user"
+      v-model:show="changingPassword"
+      :user-id="session.state.user.id"
+      :username="session.state.user.username"
+      self
+    />
   </n-layout>
 </template>
 
