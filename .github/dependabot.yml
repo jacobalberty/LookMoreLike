@@ -1,0 +1,41 @@
+version: 2
+registries:
+  # Needs a Dependabot secret NPM_GITHUB_TOKEN: a token with read:packages.
+  github-npm:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{secrets.NPM_GITHUB_TOKEN}}
+updates:
+  - package-ecosystem: npm
+    directory: /
+    registries: [github-npm]
+    schedule: { interval: weekly }
+    groups:
+      vue:
+        patterns: ["vue", "@vitejs/plugin-vue", "vue-tsc", "@vue/*"]
+      lint:
+        patterns: ["eslint", "@eslint/*", "eslint-plugin-*", "typescript-eslint", "globals"]
+      # The API client moves with beenfar's api module, so each release of it
+      # gets its own PR instead of riding along with these.
+      npm-minor-patch:
+        update-types: [minor, patch]
+        exclude-patterns: ["@jacobalberty/*"]
+  # The end-to-end simulator's go-unifi dependency.
+  - package-ecosystem: gomod
+    directory: /e2e/simdevice
+    schedule: { interval: weekly }
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      github-actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directory: /
+    schedule: { interval: weekly }
+    groups:
+      docker-minor-patch:
+        update-types: [minor, patch]

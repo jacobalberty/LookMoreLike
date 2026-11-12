@@ -1,0 +1,130 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_call:
+
+permissions:
+  contents: read
+  # @jacobalberty/beenfar-api is a package on GitHub Packages: the workflow's
+  # token can read it because the package grants this repository access
+  # (package settings, "Manage Actions access").
+  packages: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # The beenfar commit the end-to-end tests build beenfard from. Bump it
+  # when the UI starts to need something newer.
+  BEENFAR_REF: f69cc3f4d5c9043efbbf43525b23bbd69f67f84c
+
+jobs:
+  ui:
+    name: typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Audit everything (reported, not blocking)
+        continue-on-error: true
+        run: npm audit
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+
+  commits:
+    name: conventional commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check commit subjects
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          re='^(feat|fix|perf|refactor|docs|test|build|ci|chore|style|revert)(\([a-z0-9._/-]+\))?!?: [^ ].*'
+          bad=0
+          while IFS= read -r line; do
+            sha=${line%% *}; subject=${line#* }
+            if ! [[ "$subject" =~ $re ]]; then
+              echo "::error::${sha:0:7} '$subject' is not a conventional commit (type(scope)!: description)"
+              bad=1
+            fi
+          done < <(git log --no-merges --format='%H %s' "$BASE..$HEAD")
+          exit $bad
+
+  container:
+    name: container image
+    needs: ui
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: lookmorelike:ci
+          secrets: |
+            node_auth_token=${{ secrets.GITHUB_TOKEN }}
+      - name: Smoke test
+        run: scripts/container-smoke.sh lookmorelike:ci
+
+  e2e:
+    name: end to end
+    needs: ui
+    runs-on: ubuntu-latest
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: jacobalberty/beenfar
+          ref: ${{ env.BEENFAR_REF }}
+          path: .beenfar
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: .beenfar/go.mod
+          cache-dependency-path: |
+            .beenfar/go.sum
+            e2e/simdevice/go.sum
+      - name: Build beenfard
+        working-directory: .beenfar
+        run: go build -o "$RUNNER_TEMP/beenfard" ./cmd/beenfard
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - run: npx playwright install --with-deps chromium
+      - name: Run the end-to-end tests
+        env:
+          BEENFARD_BIN: ${{ runner.temp }}/beenfard
+        run: npm run e2e

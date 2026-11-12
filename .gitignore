@@ -11,3 +11,4 @@ test-results/
 playwright-report/
 # End-to-end scratch
 e2e/.tmp/
+.vitest/
