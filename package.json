@@ -20,6 +20,7 @@
     "@bufbuild/protobuf": "2.17.0",
     "@connectrpc/connect": "2.3.0",
     "@connectrpc/connect-web": "2.3.0",
+    "@jacobalberty/beenfar-api": "0.3.0",
     "naive-ui": "2.45.3",
     "vue": "3.5.45"
   },
