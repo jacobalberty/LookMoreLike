@@ -65,6 +65,14 @@ export const routes: RouteDef[] = [
     admin: true,
     component: view(() => import('./views/UsersView.vue')),
   },
+  {
+    path: '/adapters',
+    title: 'Adapters',
+    group: 'Access',
+    nav: true,
+    admin: true,
+    component: view(() => import('./views/AdaptersView.vue')),
+  },
 ]
 
 /** Where "/" goes. */
