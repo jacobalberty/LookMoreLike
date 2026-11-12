@@ -81,6 +81,7 @@ export function useEditor<T extends { id: string; etag: string }>(o: EditorOptio
   }
 
   async function save(): Promise<EditorResult> {
+    if (state.saving) return 'unchanged'
     const problem = o.validate?.(state.form, state.mode)
     if (problem) {
       state.error = problem

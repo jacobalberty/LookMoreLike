@@ -14,6 +14,7 @@ defineProps<{ editor: Editor<T>; defs: readonly FieldDef<T>[]; title: string; wi
     :title="title"
     :style="{ width: (width ?? 560) + 'px', maxWidth: '95vw' }"
     :mask-closable="false"
+    :closable="!editor.state.saving"
     :close-on-esc="!editor.state.saving"
     data-test="editor"
     @update:show="(v: boolean) => !v && editor.close()"

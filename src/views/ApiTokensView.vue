@@ -73,6 +73,7 @@ function openCreate() {
 }
 
 async function createToken() {
+  if (busy.value) return
   if (!name.value.trim()) {
     createError.value = 'Give the token a name, such as "terraform-ci".'
     return
