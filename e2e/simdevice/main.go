@@ -10,6 +10,9 @@
 // -key makes the device use a key the controller does not know (a device
 // still managed by another controller). The result is one JSON line:
 // {"status":200,"type":"noop","key":"default"|"adopted"|"given"}.
+// A setdefault reply (the controller forgetting the device) makes the device
+// factory reset itself: it deletes its stored key, so the next run informs
+// with the default key.
 package main
 
 import (
@@ -126,6 +129,9 @@ func run(ctx context.Context, args []string, out io.Writer) error {
 			return err
 		}
 		res.Type, _ = reply["_type"].(string)
+		if res.Type == "setdefault" {
+			st = state{}
+		}
 		if cfgText, ok := reply["mgmt_cfg"].(string); ok && res.Type == "setparam" {
 			if err := adopt(&st, cfgText); err != nil {
 				return err

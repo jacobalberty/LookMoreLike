@@ -9,6 +9,7 @@ import { choose, confirmDialog, fill, go, rowWith, shot, signIn } from './ui'
  */
 const MAC = 'de:ad:be:ef:00:01'
 const LOCKED_MAC = 'de:ad:be:ef:00:09'
+const FORGET_MAC = 'de:ad:be:ef:00:0a'
 const FOREIGN_KEY = '00112233445566778899aabbccddeeff'
 const SECRETS = ['first-radius-secret', 'rotated-radius-secret']
 
@@ -255,6 +256,37 @@ test.describe.serial('the UI against beenfard', () => {
     expect(stack.sim('ap1', MAC)).toMatchObject({ status: 200, type: 'noop', key: 'adopted' })
     await page.locator('[data-test=refresh]').click()
     await expect(rowWith(page, MAC)).toHaveCount(0)
+  })
+
+  test('forgetting an adopted device resets it, and it comes back as pending', async () => {
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 404 })
+    await go(page, 'Pending devices')
+    await page.locator('[data-test=refresh]').click()
+    await rowWith(page, FORGET_MAC).locator('[data-test=adopt]').click()
+    await confirmDialog(page, 'Adopt')
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 200, type: 'setparam' })
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 200, type: 'noop', key: 'adopted' })
+
+    await go(page, 'Devices')
+    await rowWith(page, FORGET_MAC).locator('[data-test=forget]').click()
+    await confirmDialog(page, 'Forget')
+    // The reset waits for the device's next inform, so it stays listed as forgetting.
+    await expect(rowWith(page, FORGET_MAC).locator('[data-test=forgetting]')).toBeVisible()
+    await expect(rowWith(page, FORGET_MAC).locator('[data-test=remove-now]')).toBeVisible()
+    await shot(page, '14-device-forgetting')
+
+    // The device is told to reset, does, and then informs on the default key.
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 200, type: 'setdefault' })
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 404, key: 'default' })
+    await page.locator('[data-test=refresh]').click()
+    await expect(rowWith(page, FORGET_MAC)).toHaveCount(0)
+
+    // Its next inform is the one that lists it as a new, pending device.
+    expect(stack.sim('ap2', FORGET_MAC)).toMatchObject({ status: 404, key: 'default' })
+    await go(page, 'Pending devices')
+    await expect(rowWith(page, FORGET_MAC)).toContainText('U7PG2')
+    await expect(rowWith(page, FORGET_MAC).locator('[data-test=forgetting]')).toHaveCount(0)
+    await expect(rowWith(page, FORGET_MAC).locator('[data-test=adopt]')).toBeEnabled()
   })
 
   test('creates an API token whose secret is shown once', async () => {
