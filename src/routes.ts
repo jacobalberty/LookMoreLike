@@ -50,6 +50,13 @@ export const routes: RouteDef[] = [
     nav: true,
     component: view(() => import('./views/RadiusServersView.vue')),
   },
+  {
+    path: '/tokens',
+    title: 'API tokens',
+    group: 'Access',
+    nav: true,
+    component: view(() => import('./views/ApiTokensView.vue')),
+  },
 ]
 
 /** Where "/" goes. */

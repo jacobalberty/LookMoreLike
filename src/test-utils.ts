@@ -1,3 +1,4 @@
+import type { User } from '@jacobalberty/beenfar-api/beenfar/admin/v1/user_pb'
 import { flushPromises, mount } from '@vue/test-utils'
 import { NDialogProvider, NMessageProvider } from 'naive-ui'
 import { defineComponent, h, type Component } from 'vue'
@@ -20,9 +21,13 @@ export function fakeWindow(path = '/', search = ''): Window {
  * injected clients, session and router. `clients` are fakes; only what the
  * screen calls needs to exist.
  */
-export async function mountView(view: Component, clients: Record<string, unknown>, opts: { path?: string; props?: Record<string, unknown> } = {}) {
+export async function mountView(view: Component, clients: Record<string, unknown>, opts: { path?: string; props?: Record<string, unknown>; user?: User } = {}) {
   const typed = clients as never
   const session = createSession({ auth: {} } as never, { navigator: { assign: () => {} } })
+  if (opts.user) {
+    session.state.user = opts.user
+    session.state.status = 'authenticated'
+  }
   const router = createRouter(fakeWindow(opts.path))
   const Root = defineComponent({
     render: () => h(NMessageProvider, null, () => h(NDialogProvider, null, () => h(view, opts.props ?? {}))),
