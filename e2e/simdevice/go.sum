@@ -1,0 +1,4 @@
+github.com/golang/snappy v1.0.0 h1:Oy607GVXHs7RtbggtPBnr2RmDArIsAefDwvrdWvRhGs=
+github.com/golang/snappy v1.0.0/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
+github.com/jacobalberty/go-unifi v0.1.2 h1:x6GMgnlU7coA53vU5+u+R/V4+x9Gh2nbH7/kzl+OjCk=
+github.com/jacobalberty/go-unifi v0.1.2/go.mod h1:cKv/5udiWppvzP7u908qklEYHXP0KIAXwV1rAe4dH2E=
