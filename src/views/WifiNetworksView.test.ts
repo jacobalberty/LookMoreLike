@@ -109,6 +109,23 @@ describe('wifi networks', () => {
     expect(clients.wifi.updateWifiNetwork).not.toHaveBeenCalled()
   })
 
+  it('says the push refuses open, WEP and guest networks, and only for those', async () => {
+    const clients = fake()
+    const { w } = await mountView(WifiNetworksView, clients)
+    expect(w.get('[data-test=delivery-note]').text()).toContain('has not been verified on hardware')
+    await open(w)
+    expect(q('[data-test=push-refused]')).toBeNull() // WPA personal, not guest
+    await choose(w, 'f-security', WifiSecurity.OPEN)
+    expect(q('[data-test=push-refused]')?.textContent).toContain('An open network')
+    await choose(w, 'f-security', WifiSecurity.WEP)
+    expect(q('[data-test=push-refused]')?.textContent).toContain('A WEP network')
+    await choose(w, 'f-security', WifiSecurity.WPA_PERSONAL)
+    expect(q('[data-test=push-refused]')).toBeNull()
+    by(w, NSwitch, 'f-guest').vm.$emit('update:value', true)
+    await flushPromises()
+    expect(q('[data-test=push-refused]')?.textContent).toContain('A guest network')
+  })
+
   it('shows the passphrase field only where it applies', async () => {
     const clients = fake()
     const { w } = await mountView(WifiNetworksView, clients)

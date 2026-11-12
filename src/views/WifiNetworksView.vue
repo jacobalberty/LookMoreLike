@@ -25,6 +25,7 @@ import {
 } from 'naive-ui'
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
+import DeliveryNote from '@/components/DeliveryNote.vue'
 import EditorModal from '@/components/EditorModal.vue'
 import WriterHint from '@/components/WriterHint.vue'
 import { useConfirm } from '@/composables/useConfirm'
@@ -102,6 +103,13 @@ const editor = useEditor<WifiNetwork>({
 const f = editor.state
 
 const needsKey = computed(() => f.form.security === WifiSecurity.WPA_PERSONAL || f.form.security === WifiSecurity.WEP)
+/** Why the optional UniFi push would refuse this network, if it would. */
+const refusedByPush = computed(() => {
+  if (f.form.security === WifiSecurity.OPEN) return 'An open network'
+  if (f.form.security === WifiSecurity.WEP) return 'A WEP network'
+  if (f.form.guest) return 'A guest network'
+  return ''
+})
 const needsRadius = computed(() => f.form.security === WifiSecurity.WPA_ENTERPRISE)
 
 /**
@@ -172,12 +180,16 @@ const columns = computed<DataTableColumns<WifiNetwork>>(() => [
       </n-space>
     </n-space>
     <p>Wireless networks (SSIDs), the network their clients join and the access point groups that broadcast them.</p>
+    <delivery-note scope="wifi" />
     <n-alert v-if="error" type="error" data-test="load-error">{{ error }}</n-alert>
     <n-alert v-if="failure" type="error" closable data-test="delete-error" @close="failure = ''">{{ failure }}</n-alert>
     <n-data-table :columns="columns" :data="data.wifi" :loading="loading" :bordered="false" :row-key="(w: WifiNetwork) => w.id" />
     <p v-if="!loading && !error && data.wifi.length === 0" data-test="empty">No wifi networks yet.</p>
 
     <editor-modal :editor="editor" :defs="wifiFields" :title="f.mode === 'create' ? 'New wifi network' : `Edit ${f.base?.ssid ?? 'wifi network'}`" :width="640">
+      <n-alert v-if="refusedByPush" type="warning" data-test="push-refused">
+        {{ refusedByPush }} beenfar stores this network, but when the UniFi push is on it is refused and not sent to devices.
+      </n-alert>
       <n-form label-placement="left" label-width="170" @submit.prevent="editor.save()">
         <n-form-item label="SSID" feedback="1-32 bytes.">
           <n-input v-model:value="f.form.ssid" data-test="f-ssid" />

@@ -3,6 +3,7 @@ import { DeviceState, type Device } from '@jacobalberty/beenfar-api/beenfar/conf
 import { NAlert, NButton, NDataTable, NSpace, useMessage, type DataTableColumns } from 'naive-ui'
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
+import DeliveryNote from '@/components/DeliveryNote.vue'
 import DeviceStatus from '@/components/DeviceStatus.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLoad } from '@/composables/useLoad'
@@ -66,10 +67,8 @@ const columns = computed<DataTableColumns<Device>>(() => [
       <h2>Devices</h2>
       <n-button :loading="loading" data-test="refresh" @click="reload()">Refresh</n-button>
     </n-space>
-    <p>
-      Devices this controller manages. Their settings are stored by beenfar; whether a device receives them
-      depends on its adapter (see the notes on each settings screen).
-    </p>
+    <p>Devices this controller manages.</p>
+    <delivery-note scope="devices" />
     <n-alert v-if="error" type="error" data-test="load-error">{{ error }}</n-alert>
     <n-alert v-if="failure" type="error" closable data-test="forget-error" @close="failure = ''">{{ failure }}</n-alert>
     <n-data-table :columns="columns" :data="data" :loading="loading" :bordered="false" :row-key="(d: Device) => d.id" />

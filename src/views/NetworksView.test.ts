@@ -35,6 +35,11 @@ describe('networks', () => {
     expect(w.text()).toContain('10.0.20.100 – 10.0.20.200')
   })
 
+  it('says delivery to devices is optional and unverified', async () => {
+    const { w } = await mountView(NetworksView, { networks: fake() })
+    expect(w.get('[data-test=delivery-note]').text()).toContain('experimental')
+  })
+
   it('edits one field and sends a mask naming only it', async () => {
     const networks = fake()
     const { w } = await mountView(NetworksView, { networks })

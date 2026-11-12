@@ -115,6 +115,12 @@ describe('devices', () => {
     expect(macs(w)).toEqual(['de:ad:be:ef:00:01'])
   })
 
+  it('says switch port settings are never sent, and delivery is unverified', async () => {
+    const { w } = await mountView(DevicesView, { devices: fakeDevices([], [adopted()]) })
+    expect(w.get('[data-test=delivery-note]').text()).toContain('never sent')
+    expect(w.get('[data-test=delivery-note]').text()).toContain('not been verified')
+  })
+
   it('forgets after confirmation, then reloads', async () => {
     const devices = fakeDevices([], [adopted()])
     const { w } = await mountView(DevicesView, { devices })

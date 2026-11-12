@@ -42,6 +42,11 @@ describe('RADIUS servers', () => {
     expect(w.text()).toContain('stored · version 2')
   })
 
+  it('says delivery to devices is optional and unverified', async () => {
+    const { w } = await mountView(RadiusServersView, { radius: fake() })
+    expect(w.get('[data-test=delivery-note]').text()).toContain('experimental')
+  })
+
   it('does not pre-fill the secret when editing, and keeps it unless replaced', async () => {
     const radius = fake()
     const { w } = await mountView(RadiusServersView, { radius })

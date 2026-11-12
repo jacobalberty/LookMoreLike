@@ -15,6 +15,7 @@ import {
 } from 'naive-ui'
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
+import DeliveryNote from '@/components/DeliveryNote.vue'
 import EditorModal from '@/components/EditorModal.vue'
 import WriterHint from '@/components/WriterHint.vue'
 import SecretInput from '@/components/SecretInput.vue'
@@ -119,6 +120,7 @@ const f = editor.state
       </n-space>
     </n-space>
     <p>Servers that WPA-enterprise wifi networks authenticate against. Shared secrets are write-only.</p>
+    <delivery-note scope="radius" />
     <n-alert v-if="error" type="error" data-test="load-error">{{ error }}</n-alert>
     <n-alert v-if="failure" type="error" closable data-test="delete-error" @close="failure = ''">{{ failure }}</n-alert>
     <n-data-table :columns="columns" :data="data" :loading="loading" :bordered="false" :row-key="(r: RadiusServer) => r.id" />
