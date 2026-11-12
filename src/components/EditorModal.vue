@@ -45,3 +45,10 @@ defineProps<{ editor: Editor<T>; defs: readonly FieldDef<T>[]; title: string; wi
     </template>
   </n-modal>
 </template>
+
+<style>
+/* Lets a field's "last set by" note sit on its own line under the input. */
+.n-card .n-form-item-blank {
+  flex-wrap: wrap;
+}
+</style>

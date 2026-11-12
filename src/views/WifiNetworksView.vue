@@ -26,6 +26,7 @@ import {
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
 import EditorModal from '@/components/EditorModal.vue'
+import WriterHint from '@/components/WriterHint.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useEditor } from '@/composables/useEditor'
 import { useLoad } from '@/composables/useLoad'
@@ -180,12 +181,15 @@ const columns = computed<DataTableColumns<WifiNetwork>>(() => [
       <n-form label-placement="left" label-width="170" @submit.prevent="editor.save()">
         <n-form-item label="SSID" feedback="1-32 bytes.">
           <n-input v-model:value="f.form.ssid" data-test="f-ssid" />
+          <writer-hint :writers="f.base?.fieldWriters" path="ssid" />
         </n-form-item>
         <n-form-item label="Security">
           <n-select :value="f.form.security" :options="securityOptions" data-test="f-security" @update:value="setSecurity" />
+          <writer-hint :writers="f.base?.fieldWriters" path="security" />
         </n-form-item>
         <n-form-item v-if="needsKey" label="Passphrase" feedback="WPA: 8-63 characters, or 64 hex digits. WEP: 5 or 13 characters, or 10 or 26 hex digits.">
           <n-input v-model:value="f.form.securityKey" type="password" show-password-on="click" autocomplete="off" data-test="f-key" />
+          <writer-hint :writers="f.base?.fieldWriters" path="security_key" />
         </n-form-item>
         <n-form-item v-if="needsRadius" label="RADIUS server">
           <n-select
@@ -194,12 +198,15 @@ const columns = computed<DataTableColumns<WifiNetwork>>(() => [
             placeholder="Choose a RADIUS server"
             data-test="f-radius"
           />
+          <writer-hint :writers="f.base?.fieldWriters" path="radius_server_id" />
         </n-form-item>
         <n-form-item label="Bands">
           <n-select v-model:value="f.form.band" :options="bandOptions" data-test="f-band" />
+          <writer-hint :writers="f.base?.fieldWriters" path="band" />
         </n-form-item>
         <n-form-item label="Network" feedback="The network that clients of this SSID join.">
           <n-select v-model:value="f.form.networkId" :options="networkOptions" data-test="f-network" />
+          <writer-hint :writers="f.base?.fieldWriters" path="network_id" />
         </n-form-item>
         <n-form-item label="Access point groups" feedback="Empty means every access point. Type a name and press Enter to add one.">
           <n-select
@@ -212,15 +219,19 @@ const columns = computed<DataTableColumns<WifiNetwork>>(() => [
             placeholder="All access points"
             data-test="f-ap-groups"
           />
+          <writer-hint :writers="f.base?.fieldWriters" path="ap_groups" />
         </n-form-item>
         <n-form-item label="Default user group">
           <n-input v-model:value="f.form.defaultUserGroup" data-test="f-user-group" />
+          <writer-hint :writers="f.base?.fieldWriters" path="default_user_group" />
         </n-form-item>
         <n-form-item label="Guest network">
           <n-switch v-model:value="f.form.guest" data-test="f-guest" />
+          <writer-hint :writers="f.base?.fieldWriters" path="guest" />
         </n-form-item>
         <n-form-item label="Hidden">
           <n-switch v-model:value="f.form.hidden" data-test="f-hidden" />
+          <writer-hint :writers="f.base?.fieldWriters" path="hidden" />
         </n-form-item>
       </n-form>
     </editor-modal>

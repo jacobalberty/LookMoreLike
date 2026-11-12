@@ -1,5 +1,7 @@
 import { create, type MessageInitShape } from '@bufbuild/protobuf'
 import { Code, ConnectError } from '@connectrpc/connect'
+import { timestampFromDate } from '@bufbuild/protobuf/wkt'
+import { FieldWriterKind, FieldWriterSchema } from '@jacobalberty/beenfar-api/beenfar/config/v1/field_writer_pb'
 import { NetworkSchema, type Network } from '@jacobalberty/beenfar-api/beenfar/config/v1/network_pb'
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -55,6 +57,19 @@ describe('networks', () => {
     expect(req.network.subnet).toBe('')
     expect(req.network.vlanId).toBe(0)
     expect(networks.listNetworks).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows who last set each field in the edit dialog', async () => {
+    const withWriters = net({
+      fieldWriters: [
+        create(FieldWriterSchema, { field: 'vlan_id', writer: 'terraform-ci', kind: FieldWriterKind.API_TOKEN, writeTime: timestampFromDate(new Date(Date.now() - 3 * 86400_000)) }),
+      ],
+    })
+    const { w } = await mountView(NetworksView, { networks: fake([withWriters]) })
+    await w.get('[data-test=edit]').trigger('click')
+    await flushPromises()
+    expect(body().querySelector('[data-test=writer-vlan_id]')?.textContent).toContain('last set by API token terraform-ci')
+    expect(body().querySelector('[data-test=writer-name]')).toBeNull() // never written: nothing claimed
   })
 
   it('does not call the controller when nothing was changed', async () => {

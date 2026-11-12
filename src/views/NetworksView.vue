@@ -17,6 +17,7 @@ import {
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
 import EditorModal from '@/components/EditorModal.vue'
+import WriterHint from '@/components/WriterHint.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useEditor } from '@/composables/useEditor'
 import { useLoad } from '@/composables/useLoad'
@@ -113,6 +114,7 @@ const f = editor.state
       <n-form label-placement="left" label-width="150" @submit.prevent="editor.save()">
         <n-form-item label="Name">
           <n-input v-model:value="f.form.name" placeholder="e.g. IoT" data-test="f-name" />
+          <writer-hint :writers="f.base?.fieldWriters" path="name" />
         </n-form-item>
         <n-form-item label="VLAN ID" feedback="0 means untagged; otherwise 1-4094.">
           <n-input-number
@@ -123,21 +125,27 @@ const f = editor.state
             data-test="f-vlan"
             @update:value="(v: number | null) => (f.form.vlanId = v ?? 0)"
           />
+          <writer-hint :writers="f.base?.fieldWriters" path="vlan_id" />
         </n-form-item>
         <n-form-item label="Gateway and subnet" feedback="The gateway address and prefix length, e.g. 192.168.10.1/24. Empty for a layer-2 network.">
           <n-input v-model:value="f.form.subnet" placeholder="192.168.10.1/24" data-test="f-subnet" />
+          <writer-hint :writers="f.base?.fieldWriters" path="subnet" />
         </n-form-item>
         <n-form-item label="DHCP">
           <n-switch v-model:value="f.form.dhcpEnabled" data-test="f-dhcp" />
+          <writer-hint :writers="f.base?.fieldWriters" path="dhcp_enabled" />
         </n-form-item>
         <n-form-item label="DHCP range start">
           <n-input v-model:value="f.form.dhcpStart" placeholder="192.168.10.100" :disabled="!f.form.dhcpEnabled" data-test="f-dhcp-start" />
+          <writer-hint :writers="f.base?.fieldWriters" path="dhcp_start" />
         </n-form-item>
         <n-form-item label="DHCP range end">
           <n-input v-model:value="f.form.dhcpStop" placeholder="192.168.10.200" :disabled="!f.form.dhcpEnabled" data-test="f-dhcp-stop" />
+          <writer-hint :writers="f.base?.fieldWriters" path="dhcp_stop" />
         </n-form-item>
         <n-form-item label="Domain name">
           <n-input v-model:value="f.form.domainName" placeholder="iot.lan" data-test="f-domain" />
+          <writer-hint :writers="f.base?.fieldWriters" path="domain_name" />
         </n-form-item>
       </n-form>
     </editor-modal>

@@ -16,6 +16,7 @@ import {
 import { computed, h, ref } from 'vue'
 import { describeError } from '@/api/errors'
 import EditorModal from '@/components/EditorModal.vue'
+import WriterHint from '@/components/WriterHint.vue'
 import SecretInput from '@/components/SecretInput.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useEditor } from '@/composables/useEditor'
@@ -131,9 +132,11 @@ const f = editor.state
       <n-form label-placement="left" label-width="150" @submit.prevent="editor.save()">
         <n-form-item label="Name">
           <n-input v-model:value="f.form.name" data-test="f-name" />
+          <writer-hint :writers="f.base?.fieldWriters" path="name" />
         </n-form-item>
         <n-form-item label="Address" feedback="An IPv4 or IPv6 address.">
           <n-input v-model:value="f.form.address" placeholder="10.0.0.5" data-test="f-address" />
+          <writer-hint :writers="f.base?.fieldWriters" path="address" />
         </n-form-item>
         <n-form-item label="Authentication port">
           <n-input-number
@@ -144,6 +147,7 @@ const f = editor.state
             data-test="f-auth-port"
             @update:value="(v: number | null) => (f.form.authPort = v ?? 1812)"
           />
+          <writer-hint :writers="f.base?.fieldWriters" path="auth_port" />
         </n-form-item>
         <n-form-item label="Accounting port" feedback="0 for no accounting.">
           <n-input-number
@@ -154,6 +158,7 @@ const f = editor.state
             data-test="f-acct-port"
             @update:value="(v: number | null) => (f.form.accountingPort = v ?? 0)"
           />
+          <writer-hint :writers="f.base?.fieldWriters" path="accounting_port" />
         </n-form-item>
         <n-form-item label="Shared secret">
           <n-space vertical :size="8" style="width: 100%">
@@ -172,6 +177,7 @@ const f = editor.state
               <span v-else class="hint">1-128 printable ASCII characters. It cannot be read back.</span>
             </template>
           </n-space>
+          <writer-hint :writers="f.base?.fieldWriters" path="shared_secret" />
         </n-form-item>
       </n-form>
     </editor-modal>

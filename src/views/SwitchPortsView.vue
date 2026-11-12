@@ -21,6 +21,7 @@ import {
 import { computed, h, onMounted, ref, watch } from 'vue'
 import { describeError } from '@/api/errors'
 import EditorModal from '@/components/EditorModal.vue'
+import WriterHint from '@/components/WriterHint.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useEditor } from '@/composables/useEditor'
 import { useClients, useRouter } from '@/context'
@@ -205,21 +206,27 @@ const columns = computed<DataTableColumns<SwitchPort>>(() => [
         </n-form-item>
         <n-form-item label="Name">
           <n-input v-model:value="f.form.name" placeholder="e.g. Office AP" data-test="f-name" />
+          <writer-hint :writers="f.base?.fieldWriters" path="name" />
         </n-form-item>
         <n-form-item label="Port disabled">
           <n-switch v-model:value="f.form.disabled" data-test="f-disabled" />
+          <writer-hint :writers="f.base?.fieldWriters" path="disabled" />
         </n-form-item>
         <n-form-item label="Native network" feedback="Carried untagged.">
           <n-select :value="f.form.nativeNetworkId" :options="networkOptions" data-test="f-native" @update:value="setNative" />
+          <writer-hint :writers="f.base?.fieldWriters" path="native_network_id" />
         </n-form-item>
         <n-form-item label="Tagged networks">
           <n-select :value="f.form.tagging" :options="taggingOptions" data-test="f-tagging" @update:value="setTagging" />
+          <writer-hint :writers="f.base?.fieldWriters" path="tagging" />
         </n-form-item>
         <n-form-item v-if="f.form.tagging === SwitchPortTagging.CUSTOM" label="Selected networks">
           <n-select v-model:value="f.form.taggedNetworkIds" multiple :options="taggedOptions" data-test="f-tagged" />
+          <writer-hint :writers="f.base?.fieldWriters" path="tagged_network_ids" />
         </n-form-item>
         <n-form-item label="PoE">
           <n-select v-model:value="f.form.poeMode" :options="poeOptions" data-test="f-poe" />
+          <writer-hint :writers="f.base?.fieldWriters" path="poe_mode" />
         </n-form-item>
       </n-form>
     </editor-modal>
