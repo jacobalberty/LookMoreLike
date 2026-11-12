@@ -34,11 +34,11 @@ export const networkFields: readonly FieldDef<Network>[] = [
 ]
 
 export const radiusFields: readonly FieldDef<RadiusServer>[] = [
-  { path: 'name', key: 'name' },
-  { path: 'address', key: 'address' },
-  { path: 'auth_port', key: 'authPort' },
-  { path: 'accounting_port', key: 'accountingPort' },
-  { path: 'shared_secret', key: 'sharedSecret', kind: 'secret' },
+  { path: 'name', key: 'name', label: 'Name' },
+  { path: 'address', key: 'address', label: 'Address' },
+  { path: 'auth_port', key: 'authPort', label: 'Authentication port' },
+  { path: 'accounting_port', key: 'accountingPort', label: 'Accounting port', format: (v) => (v === 0 ? 'no accounting' : String(v)) },
+  { path: 'shared_secret', key: 'sharedSecret', kind: 'secret', label: 'Shared secret' },
 ]
 
 export const switchPortFields: readonly FieldDef<SwitchPort>[] = [

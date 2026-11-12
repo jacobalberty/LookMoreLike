@@ -122,6 +122,23 @@ describe('useEditor', () => {
     })
   })
 
+  it('stops a save the form fails to validate, without calling the controller', async () => {
+    const { e, create: create_ } = editor({ validate: (f: { ssid?: string }) => (f.ssid ? undefined : 'An SSID is required.') })
+    e.startCreate()
+    expect(await e.save()).toBe('error')
+    expect(e.state.error).toBe('An SSID is required.')
+    expect(create_).not.toHaveBeenCalled()
+    expect(e.state.open).toBe(true)
+  })
+
+  it('clears secrets from the form when the dialog closes', async () => {
+    const { e } = editor({ defs: [{ path: 'security_key', key: 'securityKey', kind: 'secret' }, ...wifiFields.filter((d) => d.path !== 'security_key')] })
+    e.startEdit(wifi())
+    e.state.form.securityKey = 'typed-secret'
+    e.close()
+    expect(e.state.form.securityKey).toBe('')
+  })
+
   it('forgets everything when reopened', async () => {
     const { e } = conflicted2()
     expect(e.state.error).toBe('')

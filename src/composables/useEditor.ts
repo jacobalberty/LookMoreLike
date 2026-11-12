@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 import { describeError } from '@/api/errors'
 import { saveMasked, type Conflict } from '@/forms/conflict'
-import type { FieldDef, FormOf } from '@/forms/fields'
+import { setField, type FieldDef, type FormOf } from '@/forms/fields'
 import { initialForm, type MaskedUpdate } from '@/forms/mask'
 
 export interface EditorOptions<T extends { id: string; etag: string }> {
@@ -13,6 +13,8 @@ export interface EditorOptions<T extends { id: string; etag: string }> {
   create: (form: FormOf<T>) => Promise<T>
   /** Updates with a mask naming only the changed fields. */
   update: (u: MaskedUpdate<T>, base: T) => Promise<T>
+  /** Checks the form before it is sent; a message stops the save. */
+  validate?: (form: FormOf<T>, mode: 'create' | 'edit') => string | undefined
   /** Runs after a successful create or update. */
   saved?: (value: T, mode: 'create' | 'edit') => void | Promise<void>
 }
@@ -74,9 +76,16 @@ export function useEditor<T extends { id: string; etag: string }>(o: EditorOptio
   function close(): void {
     state.open = false
     reset()
+    // A secret that was typed must not outlive the dialog.
+    for (const d of o.defs) if (d.kind === 'secret') setField(state.form, d.key, '')
   }
 
   async function save(): Promise<EditorResult> {
+    const problem = o.validate?.(state.form, state.mode)
+    if (problem) {
+      state.error = problem
+      return 'error'
+    }
     state.saving = true
     state.error = ''
     try {

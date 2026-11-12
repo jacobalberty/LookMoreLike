@@ -29,6 +29,13 @@ export const routes: RouteDef[] = [
     nav: true,
     component: view(() => import('./views/NetworksView.vue')),
   },
+  {
+    path: '/radius',
+    title: 'RADIUS servers',
+    group: 'Network',
+    nav: true,
+    component: view(() => import('./views/RadiusServersView.vue')),
+  },
 ]
 
 /** Where "/" goes. */
