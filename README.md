@@ -13,7 +13,7 @@ does, served from its own small container next to beenfard.
 |---|---|
 | Sign in | Driven by what the controller offers: a password form, one button per OpenID Connect provider, or nothing in reverse-proxy mode (sign-out then goes to the proxy). |
 | Pending devices | Adopt new devices, and accept the re-adoption of devices that were reset. Locked devices and devices awaiting re-adoption are labelled. |
-| Devices, Switch ports | Adopted devices (forget them) and their port settings. |
+| Devices, Switch ports | Adopted devices (forgetting one factory resets it; "Remove now" gives up waiting) and their port settings. |
 | Networks, Wifi networks, RADIUS servers | Create, edit and delete. RADIUS shared secrets are write-only, with rotate. |
 | API tokens | The secret is shown once, when the token is created. |
 | Users, Adapters | Administrators only: users and passwords (not for single sign-on accounts), adapter health, and importing UniFi device keys. |

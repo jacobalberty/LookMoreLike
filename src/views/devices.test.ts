@@ -78,6 +78,14 @@ describe('pending devices', () => {
     expect(devices.adoptDevice).not.toHaveBeenCalled()
   })
 
+  it('does not let a forgetting device be adopted', async () => {
+    const devices = fakeDevices([dev({ forgetting: true })])
+    const { w } = await mountView(PendingDevicesView, { devices })
+    expect(w.get('[data-test=adopt]').attributes('disabled')).toBeDefined()
+    await w.get('[data-test=adopt]').trigger('click')
+    expect(devices.adoptDevice).not.toHaveBeenCalled()
+  })
+
   it('shows a re-adoption in progress, with nothing to click', async () => {
     const devices = fakeDevices([], [dev({ state: DeviceState.ADOPTED, readoption: ReadoptionState.IN_PROGRESS })])
     const { w } = await mountView(PendingDevicesView, { devices })
@@ -126,9 +134,45 @@ describe('devices', () => {
     const { w } = await mountView(DevicesView, { devices })
     await w.get('[data-test=forget]').trigger('click')
     await flushPromises()
-    expect(confirm.mock.calls[0]![0].content).toContain('shows up again as pending')
+    expect(confirm.mock.calls[0]![0].content).toContain('factory defaults')
     expect(devices.forgetDevice).toHaveBeenCalledWith({ id: 'd1' })
     expect(devices.listDevices).toHaveBeenCalledTimes(2)
+  })
+
+  it('says the reset is still to come when the device is only marked forgetting', async () => {
+    const devices = fakeDevices([], [adopted()])
+    devices.forgetDevice.mockResolvedValue({ device: adopted({ forgetting: true }) })
+    const { w } = await mountView(DevicesView, { devices })
+    await w.get('[data-test=forget]').trigger('click')
+    await flushPromises()
+    expect(devices.forgetDevice).toHaveBeenCalledWith({ id: 'd1' })
+    expect(devices.listDevices).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows a forgetting device, and offers Remove now instead of Forget', async () => {
+    const { w } = await mountView(DevicesView, { devices: fakeDevices([], [adopted({ forgetting: true })]) })
+    expect(w.find('[data-test=forgetting]').exists()).toBe(true)
+    expect(w.find('[data-test=forget]').exists()).toBe(false)
+    expect(w.find('[data-test=remove-now]').exists()).toBe(true)
+  })
+
+  it('removes a forgetting device with force after explaining the consequence', async () => {
+    const devices = fakeDevices([], [adopted({ forgetting: true })])
+    const { w } = await mountView(DevicesView, { devices })
+    await w.get('[data-test=remove-now]').trigger('click')
+    await flushPromises()
+    expect(confirm.mock.calls[0]![0].content).toContain('by hand')
+    expect(devices.forgetDevice).toHaveBeenCalledWith({ id: 'd1', force: true })
+    expect(devices.listDevices).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not force-remove when the confirmation is declined', async () => {
+    confirm.mockResolvedValue(false)
+    const devices = fakeDevices([], [adopted({ forgetting: true })])
+    const { w } = await mountView(DevicesView, { devices })
+    await w.get('[data-test=remove-now]').trigger('click')
+    await flushPromises()
+    expect(devices.forgetDevice).not.toHaveBeenCalled()
   })
 
   it('keeps the device when the confirmation is declined', async () => {

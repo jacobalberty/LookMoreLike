@@ -41,7 +41,7 @@ const adopting = ref('')
 const failure = ref('')
 
 function canAdopt(d: Device): boolean {
-  if (d.locked) return false
+  if (d.locked || d.forgetting) return false
   // A device that is re-adopting is already being given its key.
   return d.readoption !== ReadoptionState.IN_PROGRESS
 }
