@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 
 # --- build the UI ---
-FROM node:24-alpine AS build
+# The build stage runs on the builder's own platform: the built files do not
+# depend on the target architecture, so a multi-arch image builds the UI once.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 # @jacobalberty/beenfar-api comes from GitHub Packages, which wants a token
@@ -17,6 +19,13 @@ COPY --from=build /app/dist /
 
 # --- serve it ---
 FROM nginxinc/nginx-unprivileged:1.30-alpine AS runtime
+# Pick up fixes to the base image's Alpine packages that landed after it was
+# built, so the image scan (see .github/workflows/docker-publish.yml) is not
+# failed by findings that already have a fix. The server runs as the image's
+# non-root user (101), as before.
+USER root
+RUN apk upgrade --no-cache
+USER 101
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/security-headers.conf /etc/nginx/lml-security-headers.conf
 COPY --chmod=755 docker/40-lml-config.sh /docker-entrypoint.d/40-lml-config.sh
