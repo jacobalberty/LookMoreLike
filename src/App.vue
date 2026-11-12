@@ -2,6 +2,7 @@
 import { darkTheme, NButton, NConfigProvider, NDialogProvider, NGlobalStyle, NMessageProvider, NResult, NSpin, useOsTheme } from 'naive-ui'
 import { computed, onMounted } from 'vue'
 import AppShell from './components/AppShell.vue'
+import LoginView from './views/LoginView.vue'
 import { useSession } from './context'
 
 const session = useSession()
@@ -25,7 +26,7 @@ onMounted(() => session.load())
         >
           <template #footer><n-button @click="session.load()">Try again</n-button></template>
         </n-result>
-        <n-result v-else-if="session.state.status === 'anonymous'" status="403" title="Sign in required" />
+        <login-view v-else-if="session.state.status === 'anonymous'" />
         <app-shell v-else />
       </n-dialog-provider>
     </n-message-provider>
