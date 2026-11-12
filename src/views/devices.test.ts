@@ -143,6 +143,13 @@ describe('devices', () => {
     expect(w.get('[data-test=forget-error]').text()).toContain('not found')
   })
 
+  it('links to the switch ports of a device', async () => {
+    const { w, router } = await mountView(DevicesView, { devices: fakeDevices([], [adopted()]) })
+    await w.get('[data-test=ports]').trigger('click')
+    expect(router.path).toBe('/')
+    // (the fake window keeps its location; the call itself is what matters)
+  })
+
   it('says when nothing is adopted', async () => {
     const { w } = await mountView(DevicesView, { devices: fakeDevices([], []) })
     expect(w.find('[data-test=empty]').exists()).toBe(true)

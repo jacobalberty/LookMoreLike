@@ -6,10 +6,11 @@ import { describeError } from '@/api/errors'
 import DeviceStatus from '@/components/DeviceStatus.vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useLoad } from '@/composables/useLoad'
-import { useClients } from '@/context'
+import { useClients, useRouter } from '@/context'
 import { formatTime, timeAgo } from '@/format'
 
 const clients = useClients()
+const router = useRouter()
 const message = useMessage()
 const confirm = useConfirm()
 
@@ -50,7 +51,11 @@ const columns = computed<DataTableColumns<Device>>(() => [
   {
     title: '',
     key: 'actions',
-    render: (d) => h(NButton, { size: 'small', type: 'error', secondary: true, 'data-test': 'forget', onClick: () => forget(d) }, () => 'Forget'),
+    render: (d) =>
+      h(NSpace, { size: 4 }, () => [
+        h(NButton, { size: 'small', 'data-test': 'ports', onClick: () => router.navigate(`/switch-ports?device=${encodeURIComponent(d.id)}`) }, () => 'Switch ports'),
+        h(NButton, { size: 'small', type: 'error', secondary: true, 'data-test': 'forget', onClick: () => forget(d) }, () => 'Forget'),
+      ]),
   },
 ])
 </script>

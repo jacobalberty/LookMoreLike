@@ -1,6 +1,6 @@
 import type { Network } from '@jacobalberty/beenfar-api/beenfar/config/v1/network_pb'
 import type { RadiusServer } from '@jacobalberty/beenfar-api/beenfar/config/v1/radius_server_pb'
-import type { SwitchPort } from '@jacobalberty/beenfar-api/beenfar/config/v1/switch_port_pb'
+import { PoeMode, SwitchPortTagging, type SwitchPort } from '@jacobalberty/beenfar-api/beenfar/config/v1/switch_port_pb'
 import { WifiBand, WifiSecurity, type WifiNetwork } from '@jacobalberty/beenfar-api/beenfar/config/v1/wifi_network_pb'
 import type { FieldDef } from './fields'
 
@@ -55,11 +55,24 @@ export const radiusFields: readonly FieldDef<RadiusServer>[] = [
   { path: 'shared_secret', key: 'sharedSecret', kind: 'secret', label: 'Shared secret' },
 ]
 
+export const taggingLabels: Record<number, string> = {
+  [SwitchPortTagging.UNSPECIFIED]: 'All networks',
+  [SwitchPortTagging.ALL]: 'All networks',
+  [SwitchPortTagging.NONE]: 'None (native network only)',
+  [SwitchPortTagging.CUSTOM]: 'Selected networks',
+}
+
+export const poeLabels: Record<number, string> = {
+  [PoeMode.UNSPECIFIED]: 'Auto',
+  [PoeMode.AUTO]: 'Auto',
+  [PoeMode.OFF]: 'Off',
+}
+
 export const switchPortFields: readonly FieldDef<SwitchPort>[] = [
-  { path: 'name', key: 'name' },
-  { path: 'disabled', key: 'disabled' },
-  { path: 'native_network_id', key: 'nativeNetworkId' },
-  { path: 'tagging', key: 'tagging' },
-  { path: 'tagged_network_ids', key: 'taggedNetworkIds', kind: 'set' },
-  { path: 'poe_mode', key: 'poeMode' },
+  { path: 'name', key: 'name', label: 'Name' },
+  { path: 'disabled', key: 'disabled', label: 'Port disabled' },
+  { path: 'native_network_id', key: 'nativeNetworkId', label: 'Native network', format: (v) => (v ? `network ${String(v)}` : 'the default network') },
+  { path: 'tagging', key: 'tagging', label: 'Tagged networks', format: (v) => taggingLabels[v as number] ?? String(v) },
+  { path: 'tagged_network_ids', key: 'taggedNetworkIds', kind: 'set', label: 'Selected tagged networks', format: (v) => ((v as string[]).length ? (v as string[]).join(', ') : 'none') },
+  { path: 'poe_mode', key: 'poeMode', label: 'PoE', format: (v) => poeLabels[v as number] ?? String(v) },
 ]
