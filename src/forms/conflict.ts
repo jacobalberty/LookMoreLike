@@ -1,5 +1,5 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { type FieldDef, sameValue, valueOf } from './fields'
+import { type FieldDef, type FormOf, getField, sameValue, setField, valueOf } from './fields'
 import { buildUpdate, changedFields, initialForm, type MaskedUpdate } from './mask'
 
 /**
@@ -25,7 +25,7 @@ export interface Conflict<T> {
    * upstream value, so applying again never reverts someone else's change.
    * Save it with `base: latest`.
    */
-  rebased: Partial<T>
+  rebased: FormOf<T>
 }
 
 export type SaveResult<T> =
@@ -39,7 +39,7 @@ export interface SaveOptions<T extends { etag: string }> {
   defs: readonly FieldDef<T>[]
   /** The version the user started from. */
   base: T
-  edited: Partial<T>
+  edited: FormOf<T>
   update: (u: MaskedUpdate<T>) => Promise<T>
   /** Re-reads the resource. */
   reload: () => Promise<T>
@@ -74,7 +74,7 @@ export function analyzeConflict<T>(
   defs: readonly FieldDef<T>[],
   base: T,
   latest: T,
-  edited: Partial<T>,
+  edited: FormOf<T>,
 ): Conflict<T> {
   // The secret is never returned, so "changed upstream" cannot be known for it.
   const comparable = defs.filter((d) => d.kind !== 'secret')
@@ -82,9 +82,9 @@ export function analyzeConflict<T>(
   const mine = changedFields(defs, base, edited)
   const minePaths = new Set(mine.map((d) => d.path))
   const clashing = changedUpstream.filter(
-    (d) => minePaths.has(d.path) && !sameValue(d.kind, valueOf(latest, d.key), edited[d.key]),
+    (d) => minePaths.has(d.path) && !sameValue(d.kind, valueOf(latest, d.key), getField(edited, d.key)),
   )
   const rebased = initialForm(defs, latest)
-  for (const d of mine) rebased[d.key] = edited[d.key]
+  for (const d of mine) setField(rebased, d.key, getField(edited, d.key))
   return { latest, changedUpstream, clashing, rebased }
 }

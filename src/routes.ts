@@ -22,6 +22,13 @@ export const routes: RouteDef[] = [
     nav: true,
     component: view(() => import('./views/DevicesView.vue')),
   },
+  {
+    path: '/networks',
+    title: 'Networks',
+    group: 'Network',
+    nav: true,
+    component: view(() => import('./views/NetworksView.vue')),
+  },
 ]
 
 /** Where "/" goes. */

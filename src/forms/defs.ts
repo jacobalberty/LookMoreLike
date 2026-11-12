@@ -24,13 +24,13 @@ export const wifiFields: readonly FieldDef<WifiNetwork>[] = [
 ]
 
 export const networkFields: readonly FieldDef<Network>[] = [
-  { path: 'name', key: 'name' },
-  { path: 'vlan_id', key: 'vlanId' },
-  { path: 'subnet', key: 'subnet' },
-  { path: 'dhcp_enabled', key: 'dhcpEnabled' },
-  { path: 'dhcp_start', key: 'dhcpStart' },
-  { path: 'dhcp_stop', key: 'dhcpStop' },
-  { path: 'domain_name', key: 'domainName' },
+  { path: 'name', key: 'name', label: 'Name' },
+  { path: 'vlan_id', key: 'vlanId', label: 'VLAN ID', format: (v) => (v === 0 ? 'untagged' : String(v)) },
+  { path: 'subnet', key: 'subnet', label: 'Gateway and subnet' },
+  { path: 'dhcp_enabled', key: 'dhcpEnabled', label: 'DHCP' },
+  { path: 'dhcp_start', key: 'dhcpStart', label: 'DHCP range start' },
+  { path: 'dhcp_stop', key: 'dhcpStop', label: 'DHCP range end' },
+  { path: 'domain_name', key: 'domainName', label: 'Domain name' },
 ]
 
 export const radiusFields: readonly FieldDef<RadiusServer>[] = [

@@ -25,6 +25,23 @@ export interface FieldDef<T> {
   /** The property of the generated message ("apGroups"). */
   key: keyof T & string
   kind?: FieldKind
+  /** The name shown to people. */
+  label?: string
+  /** How a value of this field reads in a sentence (conflict notices). */
+  format?: (value: unknown) => string
+}
+
+/** The editable state of a message: its fields, without protobuf's own bookkeeping. */
+export type FormOf<T> = Partial<Omit<T, '$typeName' | '$unknown'>>
+
+// Generic code cannot index FormOf<T> by the keys of T, so reads and writes
+// of form fields go through these two.
+export function getField<T>(form: FormOf<T>, key: keyof T & string): unknown {
+  return (form as Record<string, unknown>)[key]
+}
+
+export function setField<T>(form: FormOf<T>, key: keyof T & string, value: unknown): void {
+  ;(form as Record<string, unknown>)[key] = value
 }
 
 export function valueOf<T>(obj: T, key: keyof T & string): unknown {
@@ -45,4 +62,14 @@ export function sameValue(kind: FieldKind | undefined, a: unknown, b: unknown): 
     default:
       return a === b
   }
+}
+
+/** A value as plain text, for messages. */
+export function displayValue(d: { kind?: FieldKind; format?: (v: unknown) => string }, value: unknown): string {
+  if (d.kind === 'secret') return 'a new secret'
+  if (d.format) return d.format(value)
+  if (Array.isArray(value)) return value.length ? value.join(', ') : 'none'
+  if (typeof value === 'boolean') return value ? 'yes' : 'no'
+  if (value === '' || value === undefined || value === null) return 'empty'
+  return String(value)
 }
