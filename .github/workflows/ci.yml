@@ -7,15 +7,15 @@ on:
 
 permissions:
   contents: read
-  # @jacobalberty/beenfar-api is a package on GitHub Packages: the workflow's
-  # token can read it once the package grants this repository access
-  # (package settings, "Manage Actions access").
-  packages: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# @jacobalberty/beenfar-api is a package on GitHub Packages, which asks for a
+# token with read:packages even for public packages. The repository secret
+# NPM_GITHUB_TOKEN holds one (a classic personal access token); the same
+# secret is needed under Dependabot secrets for Dependabot's own runs.
 env:
   # The beenfar commit the end-to-end tests build beenfard from. Bump it
   # when the UI starts to need something newer.
@@ -26,7 +26,7 @@ jobs:
     name: typecheck, lint, test, build
     runs-on: ubuntu-latest
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -88,7 +88,7 @@ jobs:
           load: true
           tags: lookmorelike:ci
           secrets: |
-            node_auth_token=${{ secrets.GITHUB_TOKEN }}
+            node_auth_token=${{ secrets.NPM_GITHUB_TOKEN }}
       - name: Smoke test
         run: scripts/container-smoke.sh lookmorelike:ci
 
@@ -97,7 +97,7 @@ jobs:
     needs: ui
     runs-on: ubuntu-latest
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7

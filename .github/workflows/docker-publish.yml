@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
     permissions:
       contents: read
-      packages: read
+    secrets: inherit
 
   publish:
     needs: ci
@@ -56,4 +56,4 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           secrets: |
-            node_auth_token=${{ secrets.GITHUB_TOKEN }}
+            node_auth_token=${{ secrets.NPM_GITHUB_TOKEN }}
