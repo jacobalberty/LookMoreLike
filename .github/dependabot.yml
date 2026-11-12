@@ -20,6 +20,13 @@ updates:
       npm-minor-patch:
         update-types: [minor, patch]
         exclude-patterns: ["@jacobalberty/*"]
+  # The end-to-end simulator's go-unifi dependency.
+  - package-ecosystem: gomod
+    directory: /e2e/simdevice
+    schedule: { interval: weekly }
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
