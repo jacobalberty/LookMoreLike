@@ -1,5 +1,5 @@
 import { Code, ConnectError } from '@connectrpc/connect'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createClients } from './clients'
 import { apiPath, ConfigError, normalizeApiBase } from './config'
 import { asConnectError, describeError, isConflict, isUnauthenticated } from './errors'
@@ -67,6 +67,35 @@ describe('transport', () => {
     const { seen, impl } = recordingFetch()
     await createClients(createTransport('/beenfar-api', impl)).networks.listNetworks({})
     expect(seen[0]?.url).toBe('/beenfar-api/beenfar.config.v1.NetworkService/ListNetworks')
+  })
+})
+
+describe('transport sessions', () => {
+  it('reports UNAUTHENTICATED answers, and still throws them', async () => {
+    const fetchImpl: typeof fetch = () =>
+      Promise.resolve(
+        new Response(JSON.stringify({ code: 'unauthenticated', message: 'sign in' }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    const onUnauthenticated = vi.fn()
+    const clients = createClients(createTransport('', fetchImpl, onUnauthenticated))
+    await expect(clients.networks.listNetworks({})).rejects.toSatisfy(isUnauthenticated)
+    expect(onUnauthenticated).toHaveBeenCalledOnce()
+  })
+
+  it('ignores other failures', async () => {
+    const fetchImpl: typeof fetch = () =>
+      Promise.resolve(
+        new Response(JSON.stringify({ code: 'not_found', message: 'x' }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+    const onUnauthenticated = vi.fn()
+    await expect(createClients(createTransport('', fetchImpl, onUnauthenticated)).networks.listNetworks({})).rejects.toBeDefined()
+    expect(onUnauthenticated).not.toHaveBeenCalled()
   })
 })
 
