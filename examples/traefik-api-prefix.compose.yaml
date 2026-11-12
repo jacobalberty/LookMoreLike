@@ -1,0 +1,58 @@
+# The UI at the root of a domain and beenfar under a path prefix on the same
+# domain. Traefik strips the prefix, so beenfard still sees its normal paths.
+# The UI is told the prefix with LOOKMORELIKE_API_BASE.
+#
+# OpenID Connect needs one more route: beenfar builds its callback URL from
+# the host alone (https://domain/auth/oidc/<provider>/callback), without the
+# prefix, so /auth/ must also reach beenfard unprefixed. Register that URL
+# with your identity provider.
+services:
+  beenfar:
+    image: ghcr.io/jacobalberty/beenfar:latest
+    restart: unless-stopped
+    environment:
+      BEENFAR_DB: sqlite:///data/beenfar.db
+      BEENFAR_ADMIN_PASSWORD: ${BEENFAR_ADMIN_PASSWORD:?set a password for the first admin}
+    volumes:
+      - beenfar-data:/data
+    networks: [proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.beenfar.loadbalancer.server.port: "8080"
+
+      traefik.http.routers.beenfar-prefixed.rule: Host(`${BEENFAR_DOMAIN:?set the domain}`) && PathPrefix(`/beenfar-api`)
+      traefik.http.routers.beenfar-prefixed.priority: "100"
+      traefik.http.routers.beenfar-prefixed.middlewares: beenfar-strip
+      traefik.http.routers.beenfar-prefixed.entrypoints: websecure
+      traefik.http.routers.beenfar-prefixed.tls.certresolver: letsencrypt
+      traefik.http.middlewares.beenfar-strip.stripprefix.prefixes: /beenfar-api
+
+      # Only needed for OpenID Connect sign-in (see above).
+      traefik.http.routers.beenfar-auth.rule: Host(`${BEENFAR_DOMAIN}`) && PathPrefix(`/auth/`)
+      traefik.http.routers.beenfar-auth.priority: "100"
+      traefik.http.routers.beenfar-auth.service: beenfar
+      traefik.http.routers.beenfar-auth.entrypoints: websecure
+      traefik.http.routers.beenfar-auth.tls.certresolver: letsencrypt
+
+  ui:
+    image: ghcr.io/jacobalberty/lookmorelike:latest
+    restart: unless-stopped
+    environment:
+      LOOKMORELIKE_API_BASE: /beenfar-api
+    networks: [proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.beenfar-ui.loadbalancer.server.port: "8080"
+      traefik.http.routers.beenfar-ui.rule: Host(`${BEENFAR_DOMAIN}`)
+      traefik.http.routers.beenfar-ui.priority: "1"
+      traefik.http.routers.beenfar-ui.entrypoints: websecure
+      traefik.http.routers.beenfar-ui.tls.certresolver: letsencrypt
+
+volumes:
+  beenfar-data:
+
+networks:
+  proxy:
+    external: true

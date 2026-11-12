@@ -1,0 +1,59 @@
+# The UI and beenfar on one domain, split by path: beenfar's paths go to
+# beenfard, everything else to the UI. The browser sees one origin, which
+# beenfar requires for cookie sign-in (it compares Origin with Host, and
+# Traefik keeps the Host header).
+#
+#   docker compose -f traefik-same-domain.compose.yaml up -d
+#
+# Set the domain, the admin password and (for TLS) your entrypoint and
+# certificate resolver names. Traefik is assumed to run already, with the
+# docker provider and a network called "proxy".
+services:
+  beenfar:
+    image: ghcr.io/jacobalberty/beenfar:latest
+    restart: unless-stopped
+    environment:
+      BEENFAR_DB: sqlite:///data/beenfar.db
+      # Creates the first admin when the database has no users.
+      BEENFAR_ADMIN_PASSWORD: ${BEENFAR_ADMIN_PASSWORD:?set a password for the first admin}
+    volumes:
+      - beenfar-data:/data
+    networks: [proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.beenfar.loadbalancer.server.port: "8080"
+      # The API, in the forms the UI and other clients use: Connect/gRPC-Web
+      # (/beenfar.*), REST (/api/), OIDC sign-in (/auth/), and the API docs
+      # and health check. More specific than the UI's catch-all, so higher priority.
+      traefik.http.routers.beenfar.rule: >-
+        Host(`${BEENFAR_DOMAIN:?set the domain}`) && (PathPrefix(`/beenfar.`) || PathPrefix(`/api/`) ||
+        PathPrefix(`/auth/`) || Path(`/openapi.json`) || Path(`/healthz`))
+      traefik.http.routers.beenfar.priority: "100"
+      traefik.http.routers.beenfar.entrypoints: websecure
+      traefik.http.routers.beenfar.tls.certresolver: letsencrypt
+      # UniFi devices reach /inform on beenfard directly (port 8080 on the
+      # host or its own hostname), not through this domain.
+
+  ui:
+    image: ghcr.io/jacobalberty/lookmorelike:latest
+    restart: unless-stopped
+    environment:
+      # beenfard is mounted at the root of the same origin.
+      LOOKMORELIKE_API_BASE: /
+    networks: [proxy]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.services.beenfar-ui.loadbalancer.server.port: "8080"
+      traefik.http.routers.beenfar-ui.rule: Host(`${BEENFAR_DOMAIN}`)
+      traefik.http.routers.beenfar-ui.priority: "1"
+      traefik.http.routers.beenfar-ui.entrypoints: websecure
+      traefik.http.routers.beenfar-ui.tls.certresolver: letsencrypt
+
+volumes:
+  beenfar-data:
+
+networks:
+  proxy:
+    external: true
