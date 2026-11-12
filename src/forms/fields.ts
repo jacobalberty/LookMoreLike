@@ -25,6 +25,12 @@ export interface FieldDef<T> {
   /** The property of the generated message ("apGroups"). */
   key: keyof T & string
   kind?: FieldKind
+  /**
+   * For a secret: the property that increases whenever it is replaced
+   * (shared_secret_version). The secret itself is never returned, so a change
+   * made by someone else can only be seen through this.
+   */
+  version?: keyof T & string
   /** The name shown to people. */
   label?: string
   /** How a value of this field reads in a sentence (conflict notices). */

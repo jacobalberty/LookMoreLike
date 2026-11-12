@@ -11,7 +11,9 @@ const changes = computed(() =>
   props.conflict.changedUpstream.map((d) => ({
     path: d.path,
     label: d.label ?? d.path,
-    now: displayValue(d, valueOf(props.conflict.latest, d.key)),
+    secret: d.kind === 'secret',
+    // A secret is never shown: not theirs, not the user's.
+    now: d.kind === 'secret' ? '' : displayValue(d, valueOf(props.conflict.latest, d.key)),
     clash: props.conflict.clashing.some((c) => c.path === d.path),
   })),
 )
@@ -24,8 +26,11 @@ const changes = computed(() =>
         <span>Someone else (or another tool, such as Terraform) changed:</span>
         <ul>
           <li v-for="c in changes" :key="c.path" :data-test="'changed-' + c.path">
-            <strong>{{ c.label }}</strong> is now <em>{{ c.now }}</em>
-            <span v-if="c.clash" class="clash"> (you also changed this)</span>
+            <template v-if="c.secret"><strong>{{ c.label }}</strong> was replaced by someone else</template>
+            <template v-else><strong>{{ c.label }}</strong> is now <em>{{ c.now }}</em></template>
+            <span v-if="c.clash" class="clash">
+              (you also changed this{{ c.secret ? ': keeping your edits replaces their secret' : '' }})
+            </span>
           </li>
         </ul>
       </template>

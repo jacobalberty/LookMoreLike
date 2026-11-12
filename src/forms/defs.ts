@@ -53,7 +53,7 @@ export const radiusFields: readonly FieldDef<RadiusServer>[] = [
   { path: 'address', key: 'address', label: 'Address' },
   { path: 'auth_port', key: 'authPort', label: 'Authentication port' },
   { path: 'accounting_port', key: 'accountingPort', label: 'Accounting port', format: (v) => (v === 0 ? 'no accounting' : String(v)) },
-  { path: 'shared_secret', key: 'sharedSecret', kind: 'secret', label: 'Shared secret' },
+  { path: 'shared_secret', key: 'sharedSecret', kind: 'secret', version: 'sharedSecretVersion', label: 'Shared secret' },
 ]
 
 export const taggingLabels: Record<number, string> = {

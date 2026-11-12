@@ -76,13 +76,20 @@ export function analyzeConflict<T>(
   latest: T,
   edited: FormOf<T>,
 ): Conflict<T> {
-  // The secret is never returned, so "changed upstream" cannot be known for it.
-  const comparable = defs.filter((d) => d.kind !== 'secret')
-  const changedUpstream = comparable.filter((d) => !sameValue(d.kind, valueOf(base, d.key), valueOf(latest, d.key)))
+  // A secret is never returned, so it cannot be compared by value: it counts as
+  // changed upstream when its version moved, i.e. someone else replaced it. A
+  // secret without a version cannot be compared at all and is never reported.
+  const changedUpstream = defs.filter((d) =>
+    d.kind === 'secret'
+      ? d.version !== undefined && !sameValue('scalar', valueOf(base, d.version), valueOf(latest, d.version))
+      : !sameValue(d.kind, valueOf(base, d.key), valueOf(latest, d.key)),
+  )
   const mine = changedFields(defs, base, edited)
   const minePaths = new Set(mine.map((d) => d.path))
+  // Both sides replacing a secret is always a clash: applying the user's again
+  // would overwrite the other rotation, and the values cannot be compared.
   const clashing = changedUpstream.filter(
-    (d) => minePaths.has(d.path) && !sameValue(d.kind, valueOf(latest, d.key), getField(edited, d.key)),
+    (d) => minePaths.has(d.path) && (d.kind === 'secret' || !sameValue(d.kind, valueOf(latest, d.key), getField(edited, d.key))),
   )
   const rebased = initialForm(defs, latest)
   for (const d of mine) setField(rebased, d.key, getField(edited, d.key))

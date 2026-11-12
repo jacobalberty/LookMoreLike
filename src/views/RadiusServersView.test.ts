@@ -149,6 +149,24 @@ describe('RADIUS servers', () => {
     expect(req.updateMask.paths).toEqual(['shared_secret']) // the new address is not reverted
   })
 
+  it('warns when someone else rotated the secret too, without showing any secret', async () => {
+    const radius = fake()
+    radius.updateRadiusServer.mockRejectedValueOnce(new ConnectError('changed', Code.Aborted))
+    radius.getRadiusServer.mockResolvedValue({ radiusServer: server({ etag: '4', sharedSecretVersion: 3n }) })
+    const { w } = await mountView(RadiusServersView, { radius })
+    await w.get('[data-test=rotate]').trigger('click')
+    await flushPromises()
+    await type('[data-test=f-secret] input', 'my-rotated-secret')
+    await click('[data-test=save]')
+    const notice = q('[data-test=conflict]')?.textContent ?? ''
+    expect(notice).toContain('Shared secret')
+    expect(notice).toContain('was replaced by someone else')
+    expect(notice).toContain('keeping your edits replaces their secret')
+    expect(notice).not.toContain('my-rotated-secret')
+    expect(q('[data-test=changed-shared_secret]')).not.toBeNull()
+    expect(radius.updateRadiusServer).toHaveBeenCalledTimes(1) // not retried
+  })
+
   it('deletes with the etag after confirmation, and says when a wifi network uses it', async () => {
     const radius = fake()
     radius.deleteRadiusServer.mockRejectedValue(new ConnectError('radius server r1 is used by 1 wireless network(s)', Code.FailedPrecondition))

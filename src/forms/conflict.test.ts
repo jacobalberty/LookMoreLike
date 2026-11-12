@@ -86,6 +86,57 @@ describe('saveMasked', () => {
     expect(c.rebased.address).toBe('10.0.0.6')
   })
 
+  describe('shared secrets', () => {
+    const server = (over = {}) =>
+      create(RadiusServerSchema, { id: 'r1', etag: '1', name: 'radius', address: '10.0.0.5', sharedSecretVersion: 2n, ...over })
+
+    it('flags two clients rotating the same secret as a clash', async () => {
+      const r = server()
+      const latest = server({ etag: '2', sharedSecretVersion: 3n }) // someone else rotated it
+      const edited = initialForm(radiusFields, r)
+      edited.sharedSecret = 'my-new-secret'
+      const c = analyzeConflict(radiusFields, r, latest, edited)
+      expect(c.changedUpstream.map((d) => d.path)).toEqual(['shared_secret'])
+      expect(c.clashing.map((d) => d.path)).toEqual(['shared_secret'])
+      expect(c.rebased.sharedSecret).toBe('my-new-secret') // kept, but only on request
+    })
+
+    it('reports a rotation by someone else even when the user is not rotating', () => {
+      const r = server()
+      const latest = server({ etag: '2', sharedSecretVersion: 3n })
+      const edited = initialForm(radiusFields, r)
+      edited.name = 'renamed'
+      const c = analyzeConflict(radiusFields, r, latest, edited)
+      expect(c.changedUpstream.map((d) => d.path)).toEqual(['shared_secret'])
+      expect(c.clashing).toEqual([]) // nothing of the user's overlaps
+      expect(c.rebased.sharedSecret).toBe('') // and no secret is carried over
+    })
+
+    it('does not report a secret whose version did not move', () => {
+      const r = server()
+      const latest = server({ etag: '2', address: '10.0.0.6' })
+      const edited = initialForm(radiusFields, r)
+      edited.sharedSecret = 'my-new-secret'
+      const c = analyzeConflict(radiusFields, r, latest, edited)
+      expect(c.changedUpstream.map((d) => d.path)).toEqual(['address'])
+      expect(c.clashing).toEqual([])
+    })
+
+    it('through a save: the raced rotation is shown, not retried', async () => {
+      const r = server()
+      const h = harness({
+        update: () => Promise.reject(aborted()),
+        reload: () => Promise.resolve(server({ etag: '2', sharedSecretVersion: 3n }) as never),
+      })
+      const edited = initialForm(radiusFields, r)
+      edited.sharedSecret = 'my-new-secret'
+      const res = await saveMasked({ defs: radiusFields, base: r, edited, update: h.update as never, reload: h.reload as never })
+      expect(res.status).toBe('conflict')
+      if (res.status === 'conflict') expect(res.conflict.clashing.map((d) => d.path)).toEqual(['shared_secret'])
+      expect(h.update).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('reports a resource deleted while it was being edited', async () => {
     const b = base()
     const h = harness({
