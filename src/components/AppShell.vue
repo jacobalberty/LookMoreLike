@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { NButton, NLayout, NLayoutContent, NLayoutHeader, NLayoutSider, NMenu, NSpace, NTag, type MenuOption } from 'naive-ui'
-import { computed, h } from 'vue'
+import { computed, h, watchEffect } from 'vue'
 import AppLink from './AppLink.vue'
 import { useRouter, useSession } from '@/context'
 import { methodLabel } from '@/session'
-import { routes as appRoutes } from '@/routes'
+import { homePath, routes as appRoutes } from '@/routes'
 import { findRoute, visibleRoutes, type RouteDef } from '@/router'
 import NotFound from '@/views/NotFound.vue'
 
@@ -32,6 +32,11 @@ const menu = computed<MenuOption[]>(() => {
     group.children?.push(item)
   }
   return out
+})
+
+// "/" is not a screen: go to the first one.
+watchEffect(() => {
+  if (router.path === '/') router.navigate(homePath, { replace: true })
 })
 
 const view = computed(() => current.value?.component ?? NotFound)
