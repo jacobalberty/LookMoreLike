@@ -74,6 +74,26 @@ describe('API tokens', () => {
     expect(c.tokens.listApiTokens).toHaveBeenCalledTimes(2) // the list refreshed
   })
 
+  it('creates one token, not two, when create is triggered again while it is pending', async () => {
+    const c = fake()
+    let finish!: (v: unknown) => void
+    c.tokens.createApiToken.mockReturnValue(new Promise((ok) => (finish = ok)))
+    const { w } = await mountView(ApiTokensView, c)
+    await w.get('[data-test=new]').trigger('click')
+    await flushPromises()
+    await type('[data-test=t-name] input', 'ci-job')
+    await click('[data-test=create]')
+    // Enter in the name box, or another click, while the first request is pending.
+    const name = q('[data-test=t-name] input') as HTMLInputElement
+    name.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    await click('[data-test=create]')
+    expect(c.tokens.createApiToken).toHaveBeenCalledTimes(1)
+    finish({ apiToken: token({ id: 't2', name: 'ci-job' }), secret: SECRET })
+    await flushPromises()
+    expect((q('[data-test=secret] input') as HTMLInputElement).value).toBe(SECRET)
+    expect(c.tokens.createApiToken).toHaveBeenCalledTimes(1)
+  })
+
   it('forgets the secret when the dialog is dismissed', async () => {
     const c = fake()
     const { w } = await mountView(ApiTokensView, c)

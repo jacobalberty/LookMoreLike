@@ -28,6 +28,23 @@ describe('useEditor', () => {
     expect(saved).toHaveBeenCalledWith(expect.objectContaining({ id: 'w1' }), 'edit')
   })
 
+  it('ignores a second save while one is in flight', async () => {
+    let finish!: (w: WifiNetwork) => void
+    const update = vi.fn().mockReturnValue(new Promise<WifiNetwork>((ok) => (finish = ok)))
+    const { e, saved } = editor({ update })
+    e.startEdit(wifi())
+    e.state.form.hidden = true
+    const first = e.save()
+    expect(e.state.saving).toBe(true)
+    await e.save() // Enter pressed again, say
+    expect(update).toHaveBeenCalledTimes(1)
+    finish(wifi({ hidden: true, etag: '2' }))
+    expect(await first).toBe('saved')
+    expect(update).toHaveBeenCalledTimes(1)
+    expect(saved).toHaveBeenCalledTimes(1)
+    expect(e.state.saving).toBe(false)
+  })
+
   it('closes without a request when nothing changed', async () => {
     const { e, update } = editor()
     e.startEdit(wifi())

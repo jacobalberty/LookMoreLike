@@ -77,6 +77,30 @@ describe('networks', () => {
     expect(body().querySelector('[data-test=writer-name]')).toBeNull() // never written: nothing claimed
   })
 
+  it('cannot be closed while a save is in flight', async () => {
+    const networks = fake()
+    let finish!: (v: unknown) => void
+    networks.updateNetwork.mockReturnValue(new Promise((ok) => (finish = ok)))
+    const { w } = await mountView(NetworksView, { networks })
+    await w.get('[data-test=edit]').trigger('click')
+    await flushPromises()
+    expect(body().querySelector('[data-test=editor] .n-base-close, .n-card-header__close')).not.toBeNull() // closable when idle
+    const domain = body().querySelector(input('f-domain')) as HTMLInputElement
+    domain.value = 'iot.lan'
+    domain.dispatchEvent(new Event('input'))
+    await flushPromises()
+    ;(body().querySelector('[data-test=save]') as HTMLElement).click()
+    await flushPromises()
+    expect(body().querySelector('.n-card-header__close')).toBeNull() // no close icon while saving
+    ;(body().querySelector('[data-test=save]') as HTMLElement).click() // and a second click sends nothing
+    await flushPromises()
+    expect(networks.updateNetwork).toHaveBeenCalledTimes(1)
+    finish({ network: net({ domainName: 'iot.lan', etag: '5' }) })
+    await flushPromises()
+    expect(networks.updateNetwork).toHaveBeenCalledTimes(1)
+    expect(networks.listNetworks).toHaveBeenCalledTimes(2) // saved once, then the list reloaded
+  })
+
   it('does not call the controller when nothing was changed', async () => {
     const networks = fake()
     const { w } = await mountView(NetworksView, { networks })
